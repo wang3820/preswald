@@ -1,27 +1,28 @@
-from preswald import text, plotly, connect, get_df, table
+from preswald import text, plotly, connect, get_df, table, query, slider
 import pandas as pd
 import plotly.express as px
 
-text("# Welcome to Preswald!")
-text("This is your first app. 🎉")
+text("# Big Ten College Basketball Efficiency Analysis 2017")
 
 # Load the CSV
 connect() # load in all sources, which by default is the sample_csv
-df = get_df('sample_csv')
+df = get_df("cbb_csv")
 
-# Create a scatter plot
-fig = px.scatter(df, x='quantity', y='value', text='item',
-                 title='Quantity vs. Value',
-                 labels={'quantity': 'Quantity', 'value': 'Value'})
+sql = "SELECT * FROM cbb_csv WHERE YEAR = 2018 AND CONF = 'B10' ORDER BY BARTHAG DESC"
 
-# Add labels for each point
-fig.update_traces(textposition='top center', marker=dict(size=12, color='lightblue'))
+filtered_df = query(sql, "cbb_csv")
+filtered_df = filtered_df[['TEAM', 'ADJOE', 'ADJDE', 'BARTHAG']]
+filtered_df = filtered_df.rename(columns={
+    "TEAM": "Team",
+    "ADJOE": "Adjusted Offensive Efficiency",
+    "ADJDE": "Adjusted Defensive Efficiency",
+    "BARTHAG": "Overall Rating"
+})
 
-# Style the plot
-fig.update_layout(template='plotly_white')
+table(filtered_df, title="Statistics")
 
-# Show the plot
+threshold = slider("Threshold", min_val=90, max_val=125, default=90)
+table(filtered_df[filtered_df["Adjusted Offensive Efficiency"] > threshold], title="Dynamic Data View")
+
+fig = px.scatter(filtered_df, x="Adjusted Offensive Efficiency", y="Adjusted Defensive Efficiency", color="Team")
 plotly(fig)
-
-# Show the data
-table(df)
